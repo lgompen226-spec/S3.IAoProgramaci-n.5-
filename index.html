@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>S3 · Programación vs. IA — IA en primarIA</title>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;700;800&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --azul-noche:  #0d2244;
+    --azul-medio:  #1a3a6e;
+    --azul-vivo:   #2563c0;
+    --ambar:       #f59e0b;
+    --ambar-claro: #fcd34d;
+    --blanco:      #ffffff;
+    --rojo-alerta: #dc2626;
+    --verde-ok:    #16a34a;
+    --gris-suave:  #e2e8f0;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    height: 100%;
+    font-family: 'Nunito', sans-serif;
+    background: var(--azul-noche);
+    color: var(--blanco);
+    overflow: hidden;
+  }
+
+  /* ── PANTALLAS ── */
+  .pantalla {
+    display: none;
+    position: fixed; inset: 0;
+    flex-direction: column;
+    background: var(--azul-noche);
+    overflow-y: auto;
+  }
+  .pantalla.activa { display: flex; }
+
+  /* ── BARRA SUPERIOR ── */
+  .barra {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 20px;
+    background: var(--azul-medio);
+    border-bottom: 2px solid var(--ambar);
+    flex-shrink: 0;
+  }
+  .barra-titulo {
+    font-family: 'Baloo 2', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--ambar);
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+  }
+  .barra-nav { display: flex; gap: 8px; }
+  .btn-nav {
+    background: transparent;
+    border: 1.5px solid var(--ambar);
+    color: var(--ambar);
+    border-radius: 8px;
+    padding: 5px 14px;
+    font-family: 'Nunito', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.18s, color 0.18s;
+  }
+  .btn-nav:hover { background: var(--ambar); color: var(--azul-noche); }
+
+  /* ── CONTENIDO CENTRAL ── */
+  .contenido {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 28px 24px 32px;
+    max-width: 900px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  /* ── TÍTULOS ── */
+  h1.fase-titulo {
+    font-family: 'Baloo 2', sans-serif;
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--ambar);
+    text-align: center;
+    line-height: 1.15;
+    margin-bottom: 6px;
+  }
+  .fase-subtitulo {
+    font-size: 1rem;
+    color: var(--gris-suave);
+    text-align: center;
+    margin-bottom: 22px;
+    max-width: 680px;
+  }
+
+  /* ── TARJETA BASE ── */
+  .tarjeta {
+    background: var(--azul-medio);
+    border: 1.5px solid rgba(245,158,11,0.25);
+    border-radius: 16px;
+    padding: 22px 26px;
+    width: 100%;
+    max-width: 720px;
+    margin-bottom: 16px;
+  }
+  .tarjeta-titulo {
+    font-family: 'Baloo 2', sans-serif;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--ambar);
+    margin-bottom: 10px;
+  }
+  .tarjeta p, .tarjeta li {
+    font-size: 0.97rem;
+    line-height: 1.65;
+    color: var(--gris-suave);
+  }
+  .tarjeta ul { padding-left: 18px; }
+  .tarjeta li { margin-bottom: 4px; }
+
+  /* ── NOTA DOCENTE ── */
+  .nota-docente {
+    background: #2d1e00;
+    border: 1.5px solid var(--ambar);
+    border-radius: 12px;
+    padding: 14px 18px;
+    width: 100%;
+    max-width: 720px;
+    margin-bottom: 16px;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+  }
+  .nota-docente .icono { font-size: 1.3rem; flex-shrink: 0; margin-top: 2px; }
+  .nota-docente .texto { font-size: 0.88rem; line-height: 1.6; color: var(--ambar-claro); }
+  .nota-docente .texto strong { color: var(--ambar); }
+
+  /* ── ALERTA ROJA FIJA ── */
+  .alerta-roja {
+    background: var(--rojo-alerta);
+    border-radius: 10px;
+    padding: 12px 18px;
+    width: 100%;
+    max-width: 720px;
+    margin-bottom: 16px;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+  }
+  .alerta-roja .icono { font-size: 1.4rem; flex-shrink: 0; }
+  .alerta-roja .texto {
+    font-family: 'Baloo 2', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--blanco);
+  }
+
+  /* ── BOTÓN REVELAR ── */
+  .btn-revelar {
+    background: var(--azul-vivo);
+    border: none;
+    border-radius: 12px;
+    color: var(--blanco);
+    font-family: 'Nunito', sans-serif;
+    font-size: 0.92rem;
+    font-weight: 700;
+    padding: 10px 22px;
+    cursor: pointer;
+    transition: background 0.18s, transform 0.1s;
+    margin-top: 8px;
+  }
+  .btn-revelar:hover { background: #1d4ed8; transform: translateY(-1px); }
+  .revelable { display: none; margin-top: 12px; }
+  .revelable.visible { display: block; }
+
+  /* ── COLUMNAS PROGRAMA / IA ── */
+  .columnas {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    width: 100%;
+    max-width: 720px;
+    margin-bottom: 16px;
+  }
+  .columna {
+    border-radius: 14px;
+    padding: 18px 16px;
+    text-align: center;
+  }
+  .columna-prog { background: #0f3460; border: 2px solid #3b82f6; }
+  .columna-ia   { background: #1a2e1a; border: 2px solid var(--verde-ok); }
+  .columna-titulo {
+    font-family: 'Baloo 2', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 800;
+    margin-bottom: 8px;
+  }
+  .columna-prog .columna-titulo { color: #93c5fd; }
+  .columna-ia   .columna-titulo { color: #86efac; }
+  .columna p {
+    font-size: 0.85rem;
+    line-height: 1.55;
+    color: var(--gris-suave);
+  }
+
+  /* ── PREGUNTA MÁGICA ── */
+  .pregunta-magica {
+    background: linear-gradient(135deg, #1a3a6e 0%, #0f2a55 100%);
+    border: 2px solid var(--ambar);
+    border-radius: 16px;
+    padding: 20px 24px;
+    width: 100%;
+    max-width: 720px;
+    margin-bottom: 16px;
+    text-align: center;
+  }
+  .pregunta-magica .etiqueta {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--ambar);
+    margin-bottom: 10px;
+  }
+  .pregunta-magica .frase {
+    font-family: 'Baloo 2', sans-serif;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--blanco);
+    line-height: 1.4;
+  }
+
+  /* ── TARJETA DEMO ── */
+  .demo-card {
+    background: var(--azul-medio);
+    border: 1.5px solid var(--ambar);
+    border-radius: 14px;
+    padding: 18px 20px;
+    width: 100%;
+    max-width: 720px;
+    margin-bottom: 14px;
+  }
+  .demo-card .num {
+    font-family: 'Baloo 2', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--ambar);
+    margin-bottom: 6px;
+  }
+  .demo-card .pregunta-demo {
+    font-family: 'Baloo 2', sans-serif;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--blanco);
+    margin-bottom: 10px;
+  }
+
+  /* ── PASOS NUMERADOS ── */
+  .pasos { width: 100%; max-width: 720px; margin-bottom: 16px; }
+  .paso {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    margin-bottom: 12px;
+  }
+  .paso-num {
+    background: var(--ambar);
+    color: var(--azul-noche);
+    font-family: 'Baloo 2', sans-serif;
+    font-weight: 800;
+    font-size: 1rem;
+    border-radius: 50%;
+    width: 32px; height: 32px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .paso-texto {
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: var(--gris-suave);
+    padding-top: 5px;
+  }
+  .paso-texto strong { color: var(--blanco); }
+
+  /* ── LISTA DE CASOS ── */
+  .casos-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    width: 100%;
+    max-width: 720px;
+    margin-bottom: 16px;
+  }
+  .caso-chip {
+    background: var(--azul-medio);
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 0.88rem;
+    color: var(--gris-suave);
+    border-left: 3px solid var(--ambar);
+  }
+  .caso-chip .tipo {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--ambar);
+    margin-bottom: 2px;
+  }
+
+  /* ── MENÚ DE INICIO ── */
+  .menu-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+    width: 100%;
+    max-width: 680px;
+    margin-top: 8px;
+  }
+  .menu-btn {
+    background: var(--azul-medio);
+    border: 1.5px solid rgba(245,158,11,0.3);
+    border-radius: 16px;
+    padding: 18px 16px;
+    cursor: pointer;
+    transition: border-color 0.18s, background 0.18s, transform 0.12s;
+    text-align: left;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+  }
+  .menu-btn:hover {
+    border-color: var(--ambar);
+    background: #1e3a6e;
+    transform: translateY(-2px);
+  }
+  .menu-btn .fase-num {
+    font-family: 'Baloo 2', sans-serif;
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: var(--ambar);
+    flex-shrink: 0;
+    width: 36px;
+    text-align: center;
+  }
+  .menu-btn .fase-info {}
+  .menu-btn .fase-nombre {
+    font-family: 'Baloo 2', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--blanco);
+    line-height: 1.2;
+  }
+  .menu-btn .fase-desc {
+    font-size: 0.75rem;
+    color: #94a3b8;
+    margin-top: 2px;
+    line-height: 1.3;
+  }
+  .menu-btn.activo {
+    border-color: var(--ambar);
+    background: #1e3a6e;
+  }
+
+  /* ── CABECERA MENÚ ── */
+  .menu-header {
+    text-align: center;
+    margin-bottom: 24px;
+    width: 100%;
+    max-width: 680px;
+  }
+  .proyecto-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--ambar);
+    margin-bottom: 4px;
+  }
+  .sesion-titulo {
+    font-family: 'Baloo 2', sans-serif;
+    font-size: 1.9rem;
+    font-weight: 800;
+    color: var(--blanco);
+    line-height: 1.15;
+    margin-bottom: 6px;
+  }
+  .sesion-meta {
+    font-size: 0.82rem;
+    color: #94a3b8;
+  }
+  .sesion-meta span {
+    display: inline-block;
+    background: rgba(245,158,11,0.12);
+    border: 1px solid rgba(245,158,11,0.3);
+    border-radius: 20px;
+    padding: 3px 10px;
+    margin: 2px 3px;
+    color: var(--ambar-claro);
+  }
+
+  /* ── CHIP DE RESPUESTA ── */
+  .chip-resp {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 14px;
+    border-radius: 20px;
+    font-family: 'Baloo 2', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 700;
+    margin-top: 8px;
+  }
+  .chip-prog { background: #1e3a6e; border: 1.5px solid #3b82f6; color: #93c5fd; }
+  .chip-ia   { background: #1a2e1a; border: 1.5px solid var(--verde-ok); color: #86efac; }
+  .chip-duda { background: #2d1e00; border: 1.5px solid var(--ambar); color: var(--ambar-claro); }
+
+  /* ── CIERRE / PUENTE ── */
+  .puente-box {
+    background: linear-gradient(135deg, #1a3a6e, #0d2244);
+    border: 2px solid var(--ambar);
+    border-radius: 16px;
+    padding: 22px 24px;
+    width: 100%;
+    max-width: 720px;
+    margin-bottom: 16px;
+    text-align: center;
+  }
+  .puente-box .flecha {
+    font-size: 2rem;
+    margin-bottom: 8px;
+  }
+  .puente-box h3 {
+    font-family: 'Baloo 2', sans-serif;
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: var(--ambar);
+    margin-bottom: 8px;
+  }
+  .puente-box p { font-size: 0.92rem; color: var(--gris-suave); line-height: 1.6; }
+
+  @media (max-width: 600px) {
+    .menu-grid { grid-template-columns: 1fr; }
+    .columnas  { grid-template-columns: 1fr; }
+    .casos-grid { grid-template-columns: 1fr; }
+    h1.fase-titulo { font-size: 1.5rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════ MENÚ ══ -->
+<div id="menu" class="pantalla activa">
+  <div style="padding: 28px 24px; display:flex; flex-direction:column; align-items:center; min-height:100vh;">
+    <div class="menu-header">
+      <div class="proyecto-label">IA en primarIA · CEIP San Fernando · 5.º de Primaria</div>
+      <div class="sesion-titulo">S3 — Programación vs. IA:<br>no es lo mismo</div>
+      <div class="sesion-meta">
+        <span>Sesión unplugged</span>
+        <span>50 min</span>
+        <span>1.er trimestre</span>
+      </div>
+    </div>
+
+    <div class="menu-grid">
+      <button class="menu-btn" onclick="ir('f0')">
+        <div class="fase-num">0</div>
+        <div class="fase-info">
+          <div class="fase-nombre">Recordatorio</div>
+          <div class="fase-desc">¿Qué aprendimos en S1 y S2?</div>
+        </div>
+      </button>
+      <button class="menu-btn" onclick="ir('f1')">
+        <div class="fase-num">1</div>
+        <div class="fase-info">
+          <div class="fase-nombre">La pregunta abierta</div>
+          <div class="fase-desc">¿Y si nadie escribe las reglas?</div>
+        </div>
+      </button>
+      <button class="menu-btn" onclick="ir('f2')">
+        <div class="fase-num">2</div>
+        <div class="fase-info">
+          <div class="fase-nombre">Dos maneras de saber</div>
+          <div class="fase-desc">Calculadora vs filtro de cara</div>
+        </div>
+      </button>
+      <button class="menu-btn" onclick="ir('f3')">
+        <div class="fase-num">3</div>
+        <div class="fase-info">
+          <div class="fase-nombre">Lo vemos funcionar</div>
+          <div class="fase-desc">Vídeo de apoyo</div>
+        </div>
+      </button>
+      <button class="menu-btn" onclick="ir('f4')">
+        <div class="fase-num">4</div>
+        <div class="fase-info">
+          <div class="fase-nombre">¿Es IA o es un programa?</div>
+          <div class="fase-desc">Demo + juego de tarjetas</div>
+        </div>
+      </button>
+      <button class="menu-btn" onclick="ir('f5')">
+        <div class="fase-num">5</div>
+        <div class="fase-info">
+          <div class="fase-nombre">Los casos difíciles</div>
+          <div class="fase-desc">Puesta en común y debate</div>
+        </div>
+      </button>
+      <button class="menu-btn" onclick="ir('f6')" style="grid-column: 1 / -1;">
+        <div class="fase-num">6</div>
+        <div class="fase-info">
+          <div class="fase-nombre">Lo que nos llevamos</div>
+          <div class="fase-desc">Cierre y puente hacia la S4</div>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════ FASE 0 ══ -->
+<div id="f0" class="pantalla">
+  <div class="barra">
+    <div class="barra-titulo">Fase 0 · Recordatorio</div>
+    <div class="barra-nav">
+      <button class="btn-nav" onclick="ir('menu')">🏠 Menú</button>
+      <button class="btn-nav" onclick="ir('f1')">Siguiente →</button>
+    </div>
+  </div>
+  <div class="contenido">
+    <h1 class="fase-titulo">¿Qué sabemos ya?</h1>
+    <p class="fase-subtitulo">Repaso rápido de las dos sesiones anteriores · 5 min</p>
+
+    <div class="tarjeta">
+      <div class="tarjeta-titulo">📍 S1 — ¿Qué sabemos de la IA?</div>
+      <p>Hicimos un mapa de todo lo que ya asociábamos con la inteligencia artificial. Surgieron ideas de todos los tipos: robots, asistentes de voz, películas, miedos, curiosidades.</p>
+      <button class="btn-revelar" onclick="revelar(this)">¿Qué idea quedó en el aire? →</button>
+      <div class="revelable">
+        <p style="margin-top:10px;">La IA hace cosas que parecen muy difíciles de explicar con reglas sencillas. ¿Cómo sabe lo que sabe?</p>
+      </div>
+    </div>
+
+    <div class="tarjeta">
+      <div class="tarjeta-titulo">📍 S2 — El juego del cartero</div>
+      <p>Simulamos un algoritmo: un compañero hacía de "máquina cartero" y seguía instrucciones escritas paso a paso para repartir cartas. Las reglas las escribimos <strong style="color:var(--blanco)">nosotros</strong>. La máquina solo obedecía.</p>
+      <button class="btn-revelar" onclick="revelar(this)">La gran pregunta que dejamos abierta →</button>
+      <div class="revelable">
+        <p style="margin-top:10px;"><em style="color:var(--ambar-claro);">"¿Y si nadie hubiera escrito esas reglas? ¿Cómo aprendería entonces la máquina?"</em></p>
+      </div>
+    </div>
+
+    <div class="nota-docente">
+      <div class="icono">💡</div>
+      <div class="texto">
+        <strong>Nota docente</strong> — Si nadie recuerda bien la S2, basta con preguntar: <em>"¿Quién era la máquina en el juego del cartero? ¿Podía hacer algo que no estuviera en las instrucciones?"</em> Eso activa el recuerdo sin necesidad de explicarlo de nuevo.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════ FASE 1 ══ -->
+<div id="f1" class="pantalla">
+  <div class="barra">
+    <div class="barra-titulo">Fase 1 · La pregunta abierta</div>
+    <div class="barra-nav">
+      <button class="btn-nav" onclick="ir('menu')">🏠 Menú</button>
+      <button class="btn-nav" onclick="ir('f0')">← Volver</button>
+      <button class="btn-nav" onclick="ir('f2')">Siguiente →</button>
+    </div>
+  </div>
+  <div class="contenido">
+    <h1 class="fase-titulo">¿Y si nadie escribe las reglas?</h1>
+    <p class="fase-subtitulo">Una pregunta para dejar en el aire · 4 min</p>
+
+    <div class="tarjeta">
+      <div class="tarjeta-titulo">Recordad el cartero</div>
+      <p>En la S2, la "máquina" seguía instrucciones que nosotros escribimos. Sin instrucciones, no hacía nada. Siempre igual. Sin sorpresas.</p>
+    </div>
+
+    <div class="pregunta-magica">
+      <div class="etiqueta">La pregunta de hoy</div>
+      <div class="frase">¿Puede una máquina aprender sola<br>sin que nadie le escriba las reglas?</div>
+    </div>
+
+    <div class="tarjeta">
+      <div class="tarjeta-titulo">Un ejemplo para pensar</div>
+      <p>Para poner las orejas de perrito en una foto, el móvil tiene que encontrar tu cara. ¿Alguien pudo escribir una regla para TODAS las caras del mundo, una por una?</p>
+      <button class="btn-revelar" onclick="revelar(this)">Pensadlo un momento →</button>
+      <div class="revelable">
+        <p style="margin-top:10px;">Imposible. Hay demasiadas caras. Demasiados ángulos, luces, expresiones. Nadie puede escribir eso.</p>
+        <p style="margin-top:8px;">Entonces… ¿cómo lo hace el móvil? <em style="color:var(--ambar-claro);">Eso es lo que vamos a descubrir hoy.</em></p>
+      </div>
+    </div>
+
+    <div class="nota-docente">
+      <div class="icono">💡</div>
+      <div class="texto">
+        <strong>Nota docente</strong> — No respondas todavía. Esta fase es solo para dejar la pregunta flotando. El alumnado que ya sabe la respuesta puede guardarla: la van a confirmar en la Fase 2.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════ FASE 2 ══ -->
+<div id="f2" class="pantalla">
+  <div class="barra">
+    <div class="barra-titulo">Fase 2 · Dos maneras de saber</div>
+    <div class="barra-nav">
+      <button class="btn-nav" onclick="ir('menu')">🏠 Menú</button>
+      <button class="btn-nav" onclick="ir('f1')">← Volver</button>
+      <button class="btn-nav" onclick="ir('f3')">Siguiente →</button>
+    </div>
+  </div>
+  <div class="contenido">
+    <h1 class="fase-titulo">Dos maneras de saber hacer algo</h1>
+    <p class="fase-subtitulo">La diferencia entre programación e IA · 10 min</p>
+
+    <div class="columnas">
+      <div class="columna columna-prog">
+        <div class="columna-titulo">PROGRAMA</div>
+        <p>Una persona escribe todas las reglas. La máquina obedece. Siempre da el mismo resultado.</p>
+      </div>
+      <div class="columna columna-ia">
+        <div class="columna-titulo">IA</div>
+        <p>Nadie escribe las reglas. La máquina aprende mirando muchos ejemplos y busca el patrón.</p>
+      </div>
+    </div>
+
+    <div class="tarjeta">
+      <div class="tarjeta-titulo">Ejemplo 1 — La calculadora</div>
+      <p>¿Cuánto es 8 × 7? La calculadora dice 56 siempre. Una persona escribió la regla de multiplicar. La calculadora no aprendió nada: obedece.</p>
+      <button class="btn-revelar" onclick="revelar(this)">¿Programa o IA? →</button>
+      <div class="revelable">
+        <span class="chip-resp chip-prog">📋 PROGRAMA</span>
+        <p style="margin-top:10px;">Las reglas de las cuatro operaciones las escribió una persona. La máquina las aplica sin aprender nada nuevo.</p>
+      </div>
+    </div>
+
+    <div class="tarjeta">
+      <div class="tarjeta-titulo">Ejemplo 2 — Reconocer un gato en una foto</div>
+      <p>¿Alguien puede escribir la regla de qué es un gato? Intenta hacerlo: "tiene cuatro patas… pero los perros también. Tiene bigotes… pero algunas personas también. Tiene orejas puntiagudas…"</p>
+      <button class="btn-revelar" onclick="revelar(this)">¿Se puede hacer con reglas? →</button>
+      <div class="revelable">
+        <p style="margin-top:10px;">Es casi imposible escribir una regla perfecta. Por eso la IA aprende de otra manera: le mostramos un millón de fotos de gatos y otro millón de fotos que no son gatos. Ella misma encuentra el patrón.</p>
+        <span class="chip-resp chip-ia">🤖 IA</span>
+      </div>
+    </div>
+
+    <div class="tarjeta">
+      <div class="tarjeta-titulo">Ejemplo 3 — El filtro de cara</div>
+      <p>Para ponerte las orejas de perrito, el móvil tiene que encontrar tu cara entre todos los fondos posibles, con cualquier luz, en cualquier ángulo.</p>
+      <button class="btn-revelar" onclick="revelar(this)">¿Cómo lo hace? →</button>
+      <div class="revelable">
+        <p style="margin-top:10px;">Nadie escribió una regla para cada cara. La máquina aprendió mirando millones de fotos de caras. Encontró el patrón sola.</p>
+        <span class="chip-resp chip-ia">🤖 IA</span>
+      </div>
+    </div>
+
+    <div class="nota-docente">
+      <div class="icono">💡</div>
+      <div class="texto">
+        <strong>Nota docente</strong> — Aquí no decimos que la IA es "más lista" que un programa. Son dos herramientas distintas para problemas distintos. Una calculadora no necesita aprender: con las reglas ya funciona perfectamente.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════ FASE 3 ══ -->
+<div id="f3" class="pantalla">
+  <div class="barra">
+    <div class="barra-titulo">Fase 3 · Lo vemos funcionar</div>
+    <div class="barra-nav">
+      <button class="btn-nav" onclick="ir('menu')">🏠 Menú</button>
+      <button class="btn-nav" onclick="ir('f2')">← Volver</button>
+      <button class="btn-nav" onclick="ir('f4')">Siguiente →</button>
+    </div>
+  </div>
+  <div class="contenido">
+    <h1 class="fase-titulo">Lo vemos funcionar</h1>
+    <p class="fase-subtitulo">Vídeo de apoyo + pregunta de contraste · 6 min</p>
+
+    <div class="tarjeta" style="border-color: var(--ambar);">
+      <div class="tarjeta-titulo">🎬 Vídeo de apoyo</div>
+      <p style="margin-bottom:10px;">
+        <strong style="color:var(--blanco);">«¿Qué es la inteligencia artificial?»</strong><br>
+        <span style="color:#94a3b8; font-size:0.88rem;">Canal Smile and Learn · Español · Apto primaria · ~3 min</span>
+      </p>
+      <p style="margin-bottom:14px;">Explica con ejemplos cotidianos (asistentes de voz, filtros, recomendaciones) qué hace la IA y en qué se diferencia de un programa convencional.</p>
+      <a href="https://www.youtube.com/watch?v=UKncFg0PyEk" target="_blank"
+         style="display:inline-flex; align-items:center; gap:8px; background:var(--rojo-alerta);
+                color:var(--blanco); text-decoration:none; font-family:'Baloo 2',sans-serif;
+                font-weight:700; font-size:0.9rem; padding:9px 18px; border-radius:10px;">
+        ▶ Abrir vídeo en YouTube
+      </a>
+    </div>
+
+    <div class="tarjeta">
+      <div class="tarjeta-titulo">Después del vídeo — una sola pregunta</div>
+      <p>En el vídeo dicen que la máquina "aprende sola". Pero…</p>
+      <button class="btn-revelar" onclick="revelar(this)">¿De dónde saca lo que aprende? →</button>
+      <div class="revelable">
+        <p style="margin-top:10px;">De ejemplos que le damos las personas. Sin ejemplos, no aprende nada. No es magia: es <em style="color:var(--ambar-claro);">práctica con muchos datos</em>.</p>
+        <p style="margin-top:8px;">Eso de "los datos" lo trabajaremos en la siguiente sesión.</p>
+      </div>
+    </div>
+
+    <div class="nota-docente">
+      <div class="icono">💡</div>
+      <div class="texto">
+        <strong>Nota docente</strong> — El vídeo usa la expresión "aprende sola", que puede malentenderse. Lanza siempre la pregunta de contraste antes de pasar a la Fase 4. Si queda tiempo, puedes añadir: <em>"¿La IA podría aprender a reconocer caras si no le mostramos ninguna foto?"</em>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════ FASE 4 ══ -->
+<div id="f4" class="pantalla">
+  <div class="barra">
+    <div class="barra-titulo">Fase 4 · Juego de tarjetas</div>
+    <div class="barra-nav">
+      <button class="btn-nav" onclick="ir('menu')">🏠 Menú</button>
+      <button class="btn-nav" onclick="ir('f3')">← Volver</button>
+      <button class="btn-nav" onclick="ir('f5')">Siguiente →</button>
+    </div>
+  </div>
+  <div class="contenido">
+    <h1 class="fase-titulo">¿Es IA o es un programa?</h1>
+    <p class="fase-subtitulo">Demo en común + juego de tarjetas en parejas o tríos · 13 min</p>
+
+    <div class="pregunta-magica">
+      <div class="etiqueta">La pregunta mágica — tenerla siempre visible</div>
+      <div class="frase">¿Alguien escribió las reglas una a una,<br>o la máquina las aprendió mirando muchos ejemplos?</div>
+    </div>
+
+    <!-- DEMO -->
+    <div class="tarjeta" style="border-color: var(--ambar);">
+      <div class="tarjeta-titulo">⚡ Demo en común primero (2 min)</div>
+      <p style="margin-bottom:12px;">Hacemos dos tarjetas juntos antes de que jueguen en grupos.</p>
+
+      <div class="demo-card">
+        <div class="num">Tarjeta demo 1</div>
+        <div class="pregunta-demo">🧮 CALCULADORA</div>
+        <p>¿Cuánto es 8 × 7? Siempre 56. ¿Alguien escribió la regla de multiplicar, o la calculadora lo aprendió mirando ejemplos?</p>
+        <button class="btn-revelar" onclick="revelar(this)">Ver respuesta →</button>
+        <div class="revelable">
+          <span class="chip-resp chip-prog">📋 PROGRAMA</span>
+          <p style="margin-top:8px;">Una persona escribió las reglas. Siempre da lo mismo. Sin aprendizaje.</p>
+        </div>
+      </div>
+
+      <div class="demo-card" style="margin-top:10px;">
+        <div class="num">Tarjeta demo 2</div>
+        <div class="pregunta-demo">🐶 FILTRO DE CARA</div>
+        <p>Para poner orejas de perrito, el móvil encuentra tu cara. ¿Alguien pudo escribir una regla para TODAS las caras del mundo?</p>
+        <button class="btn-revelar" onclick="revelar(this)">Ver respuesta →</button>
+        <div class="revelable">
+          <span class="chip-resp chip-ia">🤖 IA</span>
+          <p style="margin-top:8px;">Imposible escribirlo. La máquina aprendió mirando millones de fotos de caras.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- INSTRUCCIONES DEL JUEGO -->
+    <div class="tarjeta">
+      <div class="tarjeta-titulo">📋 Instrucciones del juego</div>
+      <div class="pasos">
+        <div class="paso">
+          <div class="paso-num">1</div>
+          <div class="paso-texto">Una persona coge la tarjeta de arriba y la <strong>lee en voz alta</strong>.</div>
+        </div>
+        <div class="paso">
+          <div class="paso-num">2</div>
+          <div class="paso-texto">El grupo decide en qué columna va y <strong>dice por qué</strong> usando la pregunta mágica. Sin justificación, la tarjeta no se coloca.</div>
+        </div>
+        <div class="paso">
+          <div class="paso-num">3</div>
+          <div class="paso-texto">Si hay dudas o no hay acuerdo → zona <strong>«NO LO TENEMOS CLARO»</strong>. No se corrige sobre la marcha.</div>
+        </div>
+        <div class="paso">
+          <div class="paso-num">4</div>
+          <div class="paso-texto">Se sigue hasta <strong>agotar el mazo</strong>.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TARJETAS DEL MAZO -->
+    <div class="tarjeta">
+      <div class="tarjeta-titulo">Las 12 tarjetas del mazo</div>
+      <div class="casos-grid" style="margin-top:10px;">
+        <div class="caso-chip"><div class="tipo">Tienden a → Programa</div>Despertador · Semáforo · Microondas · Calculadora · Puerta automática</div>
+        <div class="caso-chip"><div class="tipo">Tienden a → IA</div>Filtro de cara · Vídeos recomendados · Desbloqueo facial · Asistente de voz · Adivina tu dibujo</div>
+        <div class="caso-chip" style="grid-column:1/-1; border-left-color:var(--ambar-claro);"><div class="tipo" style="color:var(--ambar-claro);">Comodines para el debate</div>Traductor · Teclado que predice</div>
+      </div>
+    </div>
+
+    <div class="alerta-roja">
+      <div class="icono">✋</div>
+      <div class="texto">Turno de palabra: mano levantada antes de hablar. Una idea cada vez.</div>
+    </div>
+
+    <div class="nota-docente">
+      <div class="icono">💡</div>
+      <div class="texto">
+        <strong>Nota docente</strong> — Circula entre los grupos y escucha las justificaciones, no las colocaciones. Lo valioso no es dónde ponen la tarjeta, sino el razonamiento que usan. Anota mentalmente los casos que generen más debate para la Fase 5.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════ FASE 5 ══ -->
+<div id="f5" class="pantalla">
+  <div class="barra">
+    <div class="barra-titulo">Fase 5 · Los casos difíciles</div>
+    <div class="barra-nav">
+      <button class="btn-nav" onclick="ir('menu')">🏠 Menú</button>
+      <button class="btn-nav" onclick="ir('f4')">← Volver</button>
+      <button class="btn-nav" onclick="ir('f6')">Siguiente →</button>
+    </div>
+  </div>
+  <div class="contenido">
+    <h1 class="fase-titulo">Los casos difíciles</h1>
+    <p class="fase-subtitulo">Puesta en común y debate · 8 min</p>
+
+    <div class="alerta-roja">
+      <div class="icono">✋</div>
+      <div class="texto">Turno de palabra: mano levantada antes de hablar. Una idea cada vez.</div>
+    </div>
+
+    <div class="tarjeta">
+      <div class="tarjeta-titulo">Cómo hacer la puesta en común</div>
+      <p>Cada grupo explica dónde colocó sus tarjetas y por qué. Empezamos por las que todos tuvieron claras, y acabamos con las de la zona <em>NO LO TENEMOS CLARO</em>.</p>
+    </div>
+
+    <div class="tarjeta">
+      <div class="tarjeta-titulo">🔀 El traductor — ¿programa o IA?</div>
+      <p>Cuando escribes una frase en inglés y el móvil la traduce al español, ¿alguien escribió esa traducción, o la máquina la aprendió?</p>
+      <button class="btn-revelar" onclick="revelar(this)">Ver la explicación completa →</button>
+      <div class="revelable">
+        <span class="chip-resp chip-duda" style="margin-bottom:12px; display:inline-flex;">⚠️ ANTES era programa · HOY es IA</span>
+        <p style="margin-top:12px;"><strong style="color:var(--blanco);">Antes (hace 20 años):</strong> una persona escribía el diccionario palabra por palabra y también escribía las reglas de gramática. «Perro en inglés es dog. El adjetivo va después del nombre en español pero antes en inglés.» Todo escrito a mano por personas. Era un <strong style="color:#93c5fd;">programa</strong>.</p>
+        <p style="margin-top:10px;"><strong style="color:var(--blanco);">Hoy (Google Translate, DeepL…):</strong> nadie escribe las reglas. La máquina ha leído miles de millones de frases ya traducidas —libros, páginas web, documentos— y ha aprendido sola cómo funciona cada idioma. Es <strong style="color:#86efac;">IA</strong>.</p>
+        <p style="margin-top:10px;"><strong style="color:var(--ambar-claro);">¿Por qué es importante saberlo?</strong> Porque la frontera entre programa e IA no está fija para siempre. Algo que antes se hacía con reglas escritas hoy se hace aprendiendo de datos. Y eso seguirá pasando con más cosas.</p>
+      </div>
+    </div>
+
+    <div class="tarjeta">
+      <div class="tarjeta-titulo">⌨️ El teclado que predice — ¿programa o IA?</div>
+      <p>Cuando escribes «me apetece…» en el móvil y aparecen tres palabras sugeridas, ¿alguien escribió esas sugerencias, o el móvil las aprendió?</p>
+      <button class="btn-revelar" onclick="revelar(this)">Ver la explicación completa →</button>
+      <div class="revelable">
+        <span class="chip-resp chip-ia" style="margin-bottom:12px; display:inline-flex;">🤖 IA — y aprende de ti en concreto</span>
+        <p style="margin-top:12px;"><strong style="color:var(--blanco);">¿Podría alguien escribir la regla?</strong> Imposible. «Después de "me apetece" va "comer"» no sirve para todo el mundo: depende de si eres tú o tu madre, de si es por la mañana o por la noche, de lo que hayas escrito antes. Las combinaciones son infinitas.</p>
+        <p style="margin-top:10px;"><strong style="color:var(--blanco);">¿Qué hace entonces el teclado?</strong> Aprende de todos los mensajes que has escrito tú. Va guardando patrones: qué palabras usas más, qué escribes después de qué. Por eso dos móviles exactamente iguales, con el mismo modelo, sugieren cosas distintas: cada uno ha aprendido de una persona diferente.</p>
+        <p style="margin-top:10px;"><strong style="color:var(--ambar-claro);">Para pensar:</strong> el teclado guarda todo lo que escribes para aprender. ¿Os parece bien? ¿Hay algo que no os gustaría que guardara? → Esto lo trabajaremos en la S15 (datos y privacidad).</p>
+      </div>
+    </div>
+
+    <div class="nota-docente">
+      <div class="icono">💡</div>
+      <div class="texto">
+        <strong>Nota docente</strong> — Si alguien defiende una colocación "incorrecta" con un argumento sólido, recógelo en vez de descartarlo. El objetivo no es llegar a una respuesta única: es que el alumnado razone. Una respuesta equivocada bien argumentada vale más que una respuesta correcta sin justificación.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════ FASE 6 ══ -->
+<div id="f6" class="pantalla">
+  <div class="barra">
+    <div class="barra-titulo">Fase 6 · Cierre</div>
+    <div class="barra-nav">
+      <button class="btn-nav" onclick="ir('menu')">🏠 Menú</button>
+      <button class="btn-nav" onclick="ir('f5')">← Volver</button>
+    </div>
+  </div>
+  <div class="contenido">
+    <h1 class="fase-titulo">Lo que nos llevamos</h1>
+    <p class="fase-subtitulo">Cierre y puente hacia la S4 · 4 min</p>
+
+    <div class="columnas">
+      <div class="columna columna-prog">
+        <div class="columna-titulo">PROGRAMA</div>
+        <p>Alguien escribe las reglas. La máquina obedece. Siempre igual.</p>
+      </div>
+      <div class="columna columna-ia">
+        <div class="columna-titulo">IA</div>
+        <p>Nadie escribe las reglas. La máquina aprende mirando muchos ejemplos.</p>
+      </div>
+    </div>
+
+    <div class="tarjeta">
+      <div class="tarjeta-titulo">Una cosa más que sabemos ahora</div>
+      <p>La frontera entre programa e IA no siempre está clara. Hay cosas que antes eran programas y hoy son IA. Y la frontera seguirá moviéndose.</p>
+    </div>
+
+    <div class="puente-box">
+      <div class="flecha">→</div>
+      <h3>En la siguiente sesión: ¿Qué es un dato?</h3>
+      <p>Si la IA aprende mirando ejemplos… esos ejemplos son datos. Fotos, palabras, sonidos, números. En la S4 vamos a descubrir qué son los datos, para qué sirven y qué pasa cuando son injustos.</p>
+    </div>
+
+    <div class="tarjeta">
+      <div class="tarjeta-titulo">🎬 Películas relacionadas con esta sesión</div>
+      <p style="margin-bottom:14px; font-size:0.88rem; color:#94a3b8;">Para ver en casa o comentar en clase. No son obligatorias: son para seguir pensando.</p>
+
+      <div style="display:flex; flex-direction:column; gap:12px;">
+
+        <div style="background:#0d1f3c; border-radius:10px; padding:14px 16px; border-left:3px solid var(--ambar);">
+          <div style="font-family:'Baloo 2',sans-serif; font-weight:700; color:var(--ambar); font-size:0.95rem; margin-bottom:4px;">
+            Ron da error <span style="font-weight:400; color:#94a3b8; font-size:0.8rem;">(Ron's Gone Wrong, 2021)</span>
+          </div>
+          <p style="font-size:0.85rem; line-height:1.55; color:var(--gris-suave);">
+            Los robots-amigos aprenden de los datos de cada niño. Ron está «roto» porque no descargó esos datos y tiene que aprender de verdad, de la experiencia. Conecta directamente con lo de hoy: <em>aprender de ejemplos vs. venir programado</em>.
+          </p>
+        </div>
+
+        <div style="background:#0d1f3c; border-radius:10px; padding:14px 16px; border-left:3px solid #3b82f6;">
+          <div style="font-family:'Baloo 2',sans-serif; font-weight:700; color:#93c5fd; font-size:0.95rem; margin-bottom:4px;">
+            ¡Rompe Ralph! <span style="font-weight:400; color:#94a3b8; font-size:0.8rem;">(Wreck-It Ralph, 2012)</span>
+          </div>
+          <p style="font-size:0.85rem; line-height:1.55; color:var(--gris-suave);">
+            Los personajes están programados para repetir siempre lo mismo: Ralph destruye, Felix arregla. Nadie les da a elegir. Es el ejemplo perfecto de <em>programa con reglas fijas</em> y de qué pasa cuando alguien intenta salirse del guion.
+          </p>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="nota-docente">
+      <div class="icono">💡</div>
+      <div class="texto">
+        <strong>Nota docente</strong> — Puedes cerrar con una pregunta para que se lleven a casa: <em>"¿Hay algo en vuestro móvil o en vuestra tablet que creéis que aprende de vosotros?"</em> No hace falta responder ahora. Es para que observen.
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function ir(id) {
+    document.querySelectorAll('.pantalla').forEach(p => p.classList.remove('activa'));
+    const destino = document.getElementById(id);
+    if (destino) {
+      destino.classList.add('activa');
+      destino.scrollTop = 0;
+    }
+  }
+
+  function revelar(btn) {
+    const bloque = btn.nextElementSibling;
+    if (bloque && bloque.classList.contains('revelable')) {
+      bloque.classList.add('visible');
+      btn.style.display = 'none';
+    }
+  }
+</script>
+</body>
+</html>
